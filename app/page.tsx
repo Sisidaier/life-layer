@@ -13,11 +13,17 @@ type Action = {
   rationale: string;
 };
 
-type Pending = { id: string; status: string; action: Action; targetName?: string };
-type HistoryEntry = Pending & {
+type Pending = {
+  id: string;
+  status: string;
+  action: Action;
+  targetName?: string;
   sourceText: string;
   result: unknown;
+  createdAt: string;
+  updatedAt: string;
 };
+type HistoryEntry = Pending;
 type Message = {
   id: string;
   role: "user" | "assistant";
@@ -33,6 +39,52 @@ const initialMessages: Message[] = [
     text: "告诉我你想安排什么。我会先展示准备执行的操作，确认后再写入。",
   },
 ];
+
+const HISTORY_KEY = "life-layer:history:v1";
+
+function readLocalHistory(): HistoryEntry[] {
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY);
+    return raw ? (JSON.parse(raw) as HistoryEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalHistory(entries: HistoryEntry[]) {
+  window.localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(-50)));
+}
+
+function upsertLocalHistory(entry: HistoryEntry) {
+  const entries = readLocalHistory();
+  const index = entries.findIndex((item) => item.id === entry.id);
+  if (index >= 0) entries[index] = entry;
+  else entries.push(entry);
+  writeLocalHistory(entries);
+}
+
+function historyMessages(entries: HistoryEntry[]): Message[] {
+  const restored: Message[] = [];
+  for (const entry of entries) {
+    restored.push({ id: `${entry.id}:user`, role: "user", text: entry.sourceText });
+    const result = entry.result as { message?: string } | null;
+    if (entry.status === "pending") {
+      restored.push({ id: `${entry.id}:assistant`, role: "assistant", text: "我准备执行下面的操作：", pending: entry });
+    } else if (entry.status === "succeeded") {
+      restored.push({ id: `${entry.id}:assistant`, role: "assistant", text: result?.message ?? "执行成功。", state: "succeeded" });
+    } else if (entry.status === "cancelled") {
+      restored.push({ id: `${entry.id}:assistant`, role: "assistant", text: "已取消，没有写入任何系统。", state: "cancelled" });
+    } else {
+      restored.push({
+        id: `${entry.id}:assistant`,
+        role: "assistant",
+        text: result?.message ?? (entry.status === "running" ? "正在等待 iPhone Shortcut 返回结果。" : "执行失败。"),
+        state: entry.status,
+      });
+    }
+  }
+  return restored;
+}
 
 function formatDate(value: string | null, timezone: string) {
   if (!value) return "—";
@@ -64,47 +116,31 @@ export default function Home() {
     let active = true;
     async function loadHistory() {
       try {
-        const response = await fetch("/api/history", { cache: "no-store" });
-        const data = (await response.json()) as { history?: HistoryEntry[] };
-        if (!response.ok) throw new Error("读取历史失败");
-        const entries = data.history ?? [];
-        if (!active || entries.length === 0) return;
-
-        const restored: Message[] = [];
-        for (const entry of entries) {
-          restored.push({ id: `${entry.id}:user`, role: "user", text: entry.sourceText });
-          const result = entry.result as { message?: string } | null;
-          if (entry.status === "pending") {
-            restored.push({
-              id: `${entry.id}:assistant`,
-              role: "assistant",
-              text: "我准备执行下面的操作：",
-              pending: entry,
-            });
-          } else if (entry.status === "succeeded") {
-            restored.push({
-              id: `${entry.id}:assistant`,
-              role: "assistant",
-              text: result?.message ?? "执行成功。",
-              state: "succeeded",
-            });
-          } else if (entry.status === "cancelled") {
-            restored.push({
-              id: `${entry.id}:assistant`,
-              role: "assistant",
-              text: "已取消，没有写入任何系统。",
-              state: "cancelled",
-            });
-          } else {
-            restored.push({
-              id: `${entry.id}:assistant`,
-              role: "assistant",
-              text: result?.message ?? (entry.status === "running" ? "操作仍在执行。" : "执行失败。"),
-              state: entry.status,
-            });
-          }
+        let entries = readLocalHistory();
+        if (entries.length === 0) {
+          const response = await fetch("/api/history", { cache: "no-store" });
+          const data = (await response.json()) as { history?: HistoryEntry[] };
+          if (!response.ok) throw new Error("读取历史失败");
+          entries = data.history ?? [];
+          if (entries.length > 0) writeLocalHistory(entries);
         }
-        setMessages([initialMessages[0], ...restored]);
+
+        const params = new URLSearchParams(window.location.search);
+        const resultId = params.get("shortcutResult");
+        if (resultId) {
+          const status = params.get("status") === "succeeded" ? "succeeded" : "failed";
+          const message = params.get("message") || (status === "succeeded" ? "iPhone Shortcut 执行成功。" : "iPhone Shortcut 执行失败。");
+          entries = entries.map((entry) =>
+            entry.id === resultId
+              ? { ...entry, status, result: { ok: status === "succeeded", message }, updatedAt: new Date().toISOString() }
+              : entry,
+          );
+          writeLocalHistory(entries);
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+
+        if (!active || entries.length === 0) return;
+        setMessages([initialMessages[0], ...historyMessages(entries)]);
       } catch {
         if (active) {
           setMessages((current) => [
@@ -139,10 +175,11 @@ export default function Home() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "解析失败");
       const pending = data.pending as Pending;
+      upsertLocalHistory(pending);
       setMessages((current) => [
         ...current,
         {
-          id: crypto.randomUUID(),
+          id: `${pending.id}:assistant`,
           role: "assistant",
           text: data.type === "confirmation" ? "我准备执行下面的操作：" : data.result.message,
           pending: data.type === "confirmation" ? pending : undefined,
@@ -162,19 +199,63 @@ export default function Home() {
     setMessages((current) =>
       current.map((message) => (message.id === messageId && message.role === "assistant" ? { ...message, state: "running" } : message)),
     );
-    try {
-      const response = await fetch(`/api/actions/${pending.id}/${decision}`, { method: "POST" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "操作失败");
-      const text = decision === "cancel" ? "已取消，没有写入任何系统。" : data.result.message;
+    if (decision === "cancel") {
+      const cancelled: HistoryEntry = {
+        ...pending,
+        status: "cancelled",
+        result: null,
+        updatedAt: new Date().toISOString(),
+      };
+      upsertLocalHistory(cancelled);
       setMessages((current) =>
         current.map((message) =>
           message.id === messageId && message.role === "assistant"
-            ? { ...message, text, pending: undefined, state: decision === "cancel" ? "cancelled" : "succeeded" }
+            ? { ...message, text: "已取消，没有写入任何系统。", pending: undefined, state: "cancelled" }
+            : message,
+        ),
+      );
+      return;
+    }
+
+    if (process.env.NEXT_PUBLIC_LIFE_LAYER_EXECUTION_MODE === "shortcut") {
+      const running: HistoryEntry = { ...pending, status: "running", updatedAt: new Date().toISOString() };
+      upsertLocalHistory(running);
+      const callbackBase = `${window.location.origin}/?shortcutResult=${encodeURIComponent(pending.id)}`;
+      const payload = {
+        requestId: pending.id,
+        action: pending.action,
+        callbackSuccess: `${callbackBase}&status=succeeded&message=${encodeURIComponent("已写入 Apple 系统")}`,
+        callbackFailure: `${callbackBase}&status=failed&message=${encodeURIComponent("Shortcut 执行失败")}`,
+      };
+      const shortcutName = process.env.NEXT_PUBLIC_LIFE_LAYER_SHORTCUT_NAME ?? "Life Layer Bridge";
+      window.location.href = `shortcuts://run-shortcut?name=${encodeURIComponent(shortcutName)}&input=text&text=${encodeURIComponent(JSON.stringify(payload))}`;
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/actions/${pending.id}/confirm`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ pending }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "操作失败");
+      const text = data.result.message;
+      upsertLocalHistory(data.pending as HistoryEntry);
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === messageId && message.role === "assistant"
+            ? { ...message, text, pending: undefined, state: "succeeded" }
             : message,
         ),
       );
     } catch (error) {
+      upsertLocalHistory({
+        ...pending,
+        status: "failed",
+        result: { ok: false, message: error instanceof Error ? error.message : "执行失败。" },
+        updatedAt: new Date().toISOString(),
+      });
       setMessages((current) =>
         current.map((message) =>
           message.id === messageId && message.role === "assistant"

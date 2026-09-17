@@ -36,6 +36,16 @@ The current local URL (`127.0.0.1`) cannot be installed or reached from the phon
 1. Deploy the PWA and API over HTTPS.
 2. Store `DEEPSEEK_API_KEY` as a hosted secret.
 3. Create and install the `Life Layer Bridge` Shortcut on iPhone.
-4. Change confirmation on iPhone to launch the Shortcut with the structured action.
-5. Return the Shortcut result to the PWA and persist it locally.
+4. Install the Shortcut on the iPhone using the documented JSON contract.
+5. Set hosted execution mode to `shortcut`.
 6. Verify one real Calendar create action from the home-screen PWA.
+
+## Hosted execution variables
+
+```text
+LIFE_LAYER_EXECUTION_MODE=shortcut
+NEXT_PUBLIC_LIFE_LAYER_EXECUTION_MODE=shortcut
+NEXT_PUBLIC_LIFE_LAYER_SHORTCUT_NAME=Life Layer Bridge
+```
+
+In shortcut mode, the API only parses intent. The browser keeps the action history locally and the iPhone Shortcut performs the Apple mutation.

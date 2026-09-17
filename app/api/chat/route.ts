@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getBridge } from "@/lib/bridge";
 import { parseIntent } from "@/lib/parser";
-import { actionRepository } from "@/lib/repository";
+import type { PendingAction } from "@/lib/action-schema";
 
 export const runtime = "nodejs";
 
@@ -13,16 +13,28 @@ export async function POST(request: Request) {
     }
 
     const action = await parseIntent(body.message.trim());
-    const pending = await actionRepository.create(body.message.trim(), action);
+    const now = new Date().toISOString();
+    const pending: PendingAction = {
+      id: crypto.randomUUID(),
+      sourceText: body.message.trim(),
+      status: "pending",
+      action,
+      createdAt: now,
+      updatedAt: now,
+      result: null,
+    };
 
-    if (action.operation === "query" && !action.needsConfirmation) {
-      await actionRepository.update(pending.id, { status: "running" });
+    if (
+      action.operation === "query" &&
+      !action.needsConfirmation &&
+      process.env.LIFE_LAYER_EXECUTION_MODE !== "shortcut"
+    ) {
       const result = await getBridge().execute(action, pending.id);
-      await actionRepository.update(pending.id, {
-        status: result.ok ? "succeeded" : "failed",
+      return NextResponse.json({
+        type: "result",
+        pending: { ...pending, status: result.ok ? "succeeded" : "failed", result },
         result,
       });
-      return NextResponse.json({ type: "result", pending, result });
     }
 
     const targetName = action.kind === "calendar"
