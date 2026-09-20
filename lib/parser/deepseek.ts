@@ -41,7 +41,7 @@ export async function parseWithDeepSeek(text: string, timezone: string, now: Dat
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const response = await client.chat.completions.create({
-        model: process.env.DEEPSEEK_MODEL ?? "deepseek-flash",
+        model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: text },

@@ -2,9 +2,10 @@ import type { LifeAction } from "@/lib/action-schema";
 import { parseWithDeepSeek } from "@/lib/parser/deepseek";
 import { parseGoldenPath } from "@/lib/parser/deterministic";
 import { parseWithOpenAI } from "@/lib/parser/openai";
+import { normalizeTimezone } from "@/lib/time";
 
 export async function parseIntent(text: string, now = new Date()): Promise<LifeAction> {
-  const timezone = process.env.LIFE_LAYER_TIMEZONE ?? "Asia/Shanghai";
+  const timezone = normalizeTimezone(process.env.LIFE_LAYER_TIMEZONE);
   const deterministic = parseGoldenPath(text, timezone, now);
   if (deterministic) return deterministic;
 
