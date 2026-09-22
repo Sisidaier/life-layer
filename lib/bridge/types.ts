@@ -8,5 +8,5 @@ export type BridgeResult = {
 };
 
 export interface LifeBridge {
-  execute(action: LifeAction, requestId: string): Promise<BridgeResult>;
+  execute(action: LifeAction, requestId: string, targetName?: string): Promise<BridgeResult>;
 }

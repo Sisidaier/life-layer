@@ -41,6 +41,7 @@ export const pendingActionSchema = z.object({
   sourceText: z.string(),
   status: z.enum(["pending", "running", "succeeded", "failed", "cancelled"]),
   action: lifeActionSchema,
+  targetName: z.string().min(1).nullable().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   result: z.unknown().nullable(),

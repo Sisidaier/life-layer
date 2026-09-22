@@ -5,7 +5,11 @@ import path from "node:path";
 import type { BridgeResult, LifeBridge } from "@/lib/bridge/types";
 
 export class MacOsAutomationBridge implements LifeBridge {
-  async execute(action: Parameters<LifeBridge["execute"]>[0], requestId: string): Promise<BridgeResult> {
+  async execute(
+    action: Parameters<LifeBridge["execute"]>[0],
+    requestId: string,
+    targetName?: string,
+  ): Promise<BridgeResult> {
     if (process.platform !== "darwin") throw new Error("macOS automation bridge can only run on macOS");
     const directory = await mkdtemp(path.join(tmpdir(), "life-layer-apple-"));
     const inputPath = path.join(directory, "input.json");
@@ -13,8 +17,8 @@ export class MacOsAutomationBridge implements LifeBridge {
     const payload = {
       requestId,
       action,
-      calendarName: process.env.LIFE_LAYER_DEFAULT_CALENDAR || null,
-      remindersListName: process.env.LIFE_LAYER_DEFAULT_REMINDERS_LIST || null,
+      calendarName: action.kind === "calendar" ? targetName || process.env.LIFE_LAYER_DEFAULT_CALENDAR || null : null,
+      remindersListName: action.kind === "reminder" ? targetName || process.env.LIFE_LAYER_DEFAULT_REMINDERS_LIST || null : null,
     };
 
     try {

@@ -20,7 +20,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const stored = await actionRepository.get(id);
   if (stored) await actionRepository.update(id, { status: "running" });
   try {
-    const result = await getBridge().execute(action, id);
+    const result = await getBridge().execute(action, id, pending.targetName ?? undefined);
     const status = result.ok ? "succeeded" : "failed";
     const updated = stored
       ? await actionRepository.update(id, { status, result })

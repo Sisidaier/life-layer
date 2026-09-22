@@ -28,13 +28,14 @@ export const actionRepository = {
     return all.slice(-limit);
   },
 
-  async create(sourceText: string, action: PendingAction["action"]): Promise<PendingAction> {
+  async create(sourceText: string, action: PendingAction["action"], targetName?: string | null): Promise<PendingAction> {
     const now = new Date().toISOString();
     const pending: PendingAction = {
       id: crypto.randomUUID(),
       sourceText,
       status: "pending",
       action,
+      targetName,
       createdAt: now,
       updatedAt: now,
       result: null,

@@ -17,7 +17,7 @@ type Pending = {
   id: string;
   status: string;
   action: Action;
-  targetName?: string;
+  targetName?: string | null;
   sourceText: string;
   result: unknown;
   createdAt: string;
@@ -224,6 +224,7 @@ export default function Home() {
       const payload = {
         requestId: pending.id,
         action: pending.action,
+        targetName: pending.targetName ?? null,
         callbackSuccess: `${callbackBase}&status=succeeded&message=${encodeURIComponent("已写入 Apple 系统")}`,
         callbackFailure: `${callbackBase}&status=failed&message=${encodeURIComponent("Shortcut 执行失败")}`,
       };

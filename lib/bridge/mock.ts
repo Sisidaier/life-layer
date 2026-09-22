@@ -1,7 +1,7 @@
 import type { LifeBridge } from "@/lib/bridge/types";
 
 export class MockBridge implements LifeBridge {
-  async execute(action: Parameters<LifeBridge["execute"]>[0], requestId: string) {
+  async execute(action: Parameters<LifeBridge["execute"]>[0], requestId: string, targetName?: string) {
     return {
       ok: true,
       externalId: action.externalId ?? `mock:${requestId}`,
@@ -11,6 +11,7 @@ export class MockBridge implements LifeBridge {
         startAt: action.startAt,
         endAt: action.endAt,
         dueAt: action.dueAt,
+        targetName: targetName ?? null,
       },
     };
   }

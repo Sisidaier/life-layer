@@ -5,14 +5,18 @@ import path from "node:path";
 import type { BridgeResult, LifeBridge } from "@/lib/bridge/types";
 
 export class MacShortcutsBridge implements LifeBridge {
-  async execute(action: Parameters<LifeBridge["execute"]>[0], requestId: string): Promise<BridgeResult> {
+  async execute(
+    action: Parameters<LifeBridge["execute"]>[0],
+    requestId: string,
+    targetName?: string,
+  ): Promise<BridgeResult> {
     const directory = await mkdtemp(path.join(tmpdir(), "life-layer-"));
     const input = path.join(directory, "input.json");
     const output = path.join(directory, "output.json");
     const shortcutName = process.env.LIFE_LAYER_SHORTCUT_NAME ?? "Life Layer Bridge";
 
     try {
-      await writeFile(input, JSON.stringify({ requestId, action }), "utf8");
+      await writeFile(input, JSON.stringify({ requestId, action, targetName: targetName ?? null }), "utf8");
       await new Promise<void>((resolve, reject) => {
         const child = spawn("shortcuts", ["run", shortcutName, "--input-path", input, "--output-path", output], {
           stdio: ["ignore", "pipe", "pipe"],

@@ -49,3 +49,5 @@ Given a current date of 2026-09-17 in `Asia/Shanghai`:
 ```
 
 Create, update, and delete require confirmation. A Calendar create requires both `startAt` and `endAt`. An update or delete requires an `externalId` or a constrained `query`.
+
+The pending-action envelope also stores `targetName`. Calendar actions resolve this value from the user's current writable Apple Calendar categories before the confirmation card is shown, and the bridge writes to that same category after confirmation.
