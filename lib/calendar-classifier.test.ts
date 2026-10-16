@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyCalendar, classifyCalendarByRules } from "./calendar-classifier";
+import { classifyCalendar, classifyCalendarBatch, classifyCalendarByRules } from "./calendar-classifier";
 
 const calendars = ["个人", "运动", "工作", "学习", "娱乐", "大麦"];
 
@@ -20,5 +20,14 @@ describe("calendar category classifier", () => {
 
   it("falls back to the personal calendar when AI classification is unavailable", async () => {
     expect(await classifyCalendar("明晚处理一件事情", "处理事情", calendars)).toBe("个人");
+  });
+
+  it("classifies a whole batch locally when rules are sufficient", async () => {
+    const result = await classifyCalendarBatch([
+      { id: "swim", text: "游泳", title: "游泳" },
+      { id: "movie", text: "看电影", title: "看电影" },
+    ], calendars);
+    expect(result.get("swim")).toBe("运动");
+    expect(result.get("movie")).toBe("娱乐");
   });
 });

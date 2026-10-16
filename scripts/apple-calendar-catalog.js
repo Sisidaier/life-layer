@@ -10,12 +10,15 @@ function get(object, key, fallback) {
 function run() {
   try {
     const app = Application("Calendar");
-    const names = app
+    const calendars = app
       .calendars()
       .filter((calendar) => get(calendar, "writable", false))
-      .map((calendar) => String(get(calendar, "name", "")).trim())
-      .filter(Boolean);
-    return JSON.stringify({ ok: true, names });
+      .map((calendar) => ({
+        name: String(get(calendar, "name", "")).trim(),
+        color: String(get(calendar, "color", "")),
+      }))
+      .filter((calendar) => Boolean(calendar.name));
+    return JSON.stringify({ ok: true, calendars });
   } catch (error) {
     return JSON.stringify({ ok: false, message: String(error.message || error) });
   }

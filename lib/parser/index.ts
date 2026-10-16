@@ -1,13 +1,13 @@
-import type { LifeAction } from "@/lib/action-schema";
+import type { ParsePlan } from "@/lib/action-schema";
 import { parseWithDeepSeek } from "@/lib/parser/deepseek";
 import { parseGoldenPath } from "@/lib/parser/deterministic";
 import { parseWithOpenAI } from "@/lib/parser/openai";
 import { normalizeTimezone } from "@/lib/time";
 
-export async function parseIntent(text: string, now = new Date()): Promise<LifeAction> {
+export async function parseIntent(text: string, now = new Date()): Promise<ParsePlan> {
   const timezone = normalizeTimezone(process.env.LIFE_LAYER_TIMEZONE);
   const deterministic = parseGoldenPath(text, timezone, now);
-  if (deterministic) return deterministic;
+  if (deterministic) return { status: "ready", actions: [deterministic] };
 
   const provider = process.env.LIFE_LAYER_AI_PROVIDER ?? (process.env.DEEPSEEK_API_KEY ? "deepseek" : "openai");
   if (provider === "deepseek") {

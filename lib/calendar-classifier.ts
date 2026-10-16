@@ -70,6 +70,73 @@ async function classifyWithDeepSeek(text: string, title: string | null, availabl
     : null;
 }
 
+type CalendarClassificationInput = {
+  id: string;
+  text: string;
+  title: string | null;
+};
+
+async function classifyBatchWithDeepSeek(items: CalendarClassificationInput[], availableNames: string[]) {
+  if (!process.env.DEEPSEEK_API_KEY || items.length === 0) return new Map<string, string>();
+  const client = new OpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    baseURL: process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com",
+  });
+  const response = await client.chat.completions.create({
+    model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
+    messages: [
+      {
+        role: "system",
+        content: [
+          "Classify every supplied event into exactly one Apple Calendar category.",
+          `Allowed category names: ${JSON.stringify(availableNames)}.`,
+          "Return JSON with exactly one key named classifications.",
+          "classifications must contain one object per input item with exactly id and targetName.",
+          "Keep every id unchanged. targetName must exactly equal one allowed category name.",
+        ].join("\n"),
+      },
+      { role: "user", content: JSON.stringify({ items }) },
+    ],
+    response_format: { type: "json_object" },
+    max_tokens: Math.max(300, items.length * 80),
+  });
+  const content = response.choices[0]?.message.content;
+  if (!content) return new Map<string, string>();
+  const parsed = JSON.parse(content) as { classifications?: unknown };
+  if (!Array.isArray(parsed.classifications)) return new Map<string, string>();
+  const inputIds = new Set(items.map((item) => item.id));
+  const result = new Map<string, string>();
+  for (const candidate of parsed.classifications) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const { id, targetName } = candidate as { id?: unknown; targetName?: unknown };
+    if (typeof id === "string" && inputIds.has(id) && typeof targetName === "string" && availableNames.includes(targetName)) {
+      result.set(id, targetName);
+    }
+  }
+  return result;
+}
+
+export async function classifyCalendarBatch(
+  items: CalendarClassificationInput[],
+  availableNames: string[],
+): Promise<Map<string, string>> {
+  const classified = new Map<string, string>();
+  const unresolved: CalendarClassificationInput[] = [];
+  for (const item of items) {
+    const ruleMatch = classifyCalendarByRules(`${item.text} ${item.title ?? ""}`, availableNames);
+    if (ruleMatch) classified.set(item.id, ruleMatch);
+    else unresolved.push(item);
+  }
+
+  try {
+    const aiResults = await classifyBatchWithDeepSeek(unresolved, availableNames);
+    for (const item of unresolved) classified.set(item.id, aiResults.get(item.id) ?? fallbackCalendar(availableNames) ?? "默认日历");
+  } catch {
+    for (const item of unresolved) classified.set(item.id, fallbackCalendar(availableNames) ?? "默认日历");
+  }
+  return classified;
+}
+
 export async function classifyCalendar(
   text: string,
   title: string | null,

@@ -2,14 +2,14 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Life Layer",
-  description: "Turn a conversation into real calendar events and reminders.",
-  applicationName: "Life Layer",
+  title: "小橘历",
+  description: "用自然语言把想法变成日程和提醒。",
+  applicationName: "小橘历",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Life Layer",
+    title: "小橘历",
   },
   formatDetection: {
     telephone: false,

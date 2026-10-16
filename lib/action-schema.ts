@@ -42,9 +42,55 @@ export const pendingActionSchema = z.object({
   status: z.enum(["pending", "running", "succeeded", "failed", "cancelled"]),
   action: lifeActionSchema,
   targetName: z.string().min(1).nullable().optional(),
+  targetColor: z.string().regex(/^#[0-9a-f]{6}$/i).nullable().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   result: z.unknown().nullable(),
 });
 
 export type PendingAction = z.infer<typeof pendingActionSchema>;
+
+export const parsePlanSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("ready"),
+    actions: z.array(lifeActionSchema).min(1),
+  }).strict(),
+  z.object({
+    status: z.literal("needs_clarification"),
+    questions: z.array(z.string().min(1)).min(1),
+  }).strict(),
+]);
+
+export type ParsePlan = z.infer<typeof parsePlanSchema>;
+
+export const batchConflictSchema = z.object({
+  source: z.enum(["batch", "calendar"]),
+  title: z.string().min(1),
+  startAt: z.string().datetime(),
+  endAt: z.string().datetime(),
+  calendarName: z.string().min(1).nullable(),
+  withItemId: z.string().uuid().nullable(),
+});
+
+export const batchItemSchema = z.object({
+  id: z.string().uuid(),
+  action: lifeActionSchema,
+  targetName: z.string().min(1),
+  targetColor: z.string().regex(/^#[0-9a-f]{6}$/i).nullable().optional(),
+  status: z.enum(["pending", "succeeded", "failed", "skipped"]),
+  conflicts: z.array(batchConflictSchema),
+  result: z.unknown().nullable(),
+});
+
+export const pendingBatchSchema = z.object({
+  id: z.string().uuid(),
+  sourceText: z.string().min(1),
+  status: z.enum(["pending", "running", "succeeded", "partial", "failed", "cancelled"]),
+  items: z.array(batchItemSchema).min(2),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export type BatchConflict = z.infer<typeof batchConflictSchema>;
+export type BatchItem = z.infer<typeof batchItemSchema>;
+export type PendingBatch = z.infer<typeof pendingBatchSchema>;

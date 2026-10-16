@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Life Layer",
-    short_name: "Life Layer",
+    name: "小橘历",
+    short_name: "小橘历",
     description: "用自然语言操作 Apple Calendar 和 Reminders。",
     start_url: "/",
     scope: "/",

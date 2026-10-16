@@ -28,7 +28,12 @@ export const actionRepository = {
     return all.slice(-limit);
   },
 
-  async create(sourceText: string, action: PendingAction["action"], targetName?: string | null): Promise<PendingAction> {
+  async create(
+    sourceText: string,
+    action: PendingAction["action"],
+    targetName?: string | null,
+    targetColor?: string | null,
+  ): Promise<PendingAction> {
     const now = new Date().toISOString();
     const pending: PendingAction = {
       id: crypto.randomUUID(),
@@ -36,6 +41,7 @@ export const actionRepository = {
       status: "pending",
       action,
       targetName,
+      targetColor,
       createdAt: now,
       updatedAt: now,
       result: null,

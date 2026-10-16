@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { lifeActionSchema, type LifeAction } from "@/lib/action-schema";
+import { parsePlanSchema, type ParsePlan } from "@/lib/action-schema";
 
 const example = {
   version: "1",
@@ -20,21 +20,26 @@ const example = {
   needsConfirmation: true,
 };
 
-export async function parseWithDeepSeek(text: string, timezone: string, now: Date): Promise<LifeAction> {
+export async function parseWithDeepSeek(text: string, timezone: string, now: Date): Promise<ParsePlan> {
   const client = new OpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY,
     baseURL: process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com",
   });
 
   const systemPrompt = [
-    "Convert one Chinese life-planning message into exactly one JSON action.",
+    "Convert a Chinese life-planning message into a JSON plan containing one or more actions.",
     "Calendar is for an item with a concrete start and duration. Reminders are flexible tasks with a due date.",
     "Create, update, and delete require confirmation. Query does not.",
     "Never invent an externalId. Use null when it is unknown.",
     "For swimming with no duration, use 60 minutes. For other events, use the duration stated by the user.",
-    "All keys shown in the example JSON are required. Use null for unavailable nullable values. Do not add keys.",
+    "Use separate actions for different time ranges. Merge multiple activities only when the user clearly assigns them the exact same time range.",
+    "Every Calendar create item must have a date, start time, and duration or end time.",
+    "If any requested Calendar item lacks one of those required details, return only needs_clarification for the whole plan. Ask concise questions covering every missing detail. Do not return a partial executable plan.",
+    "A ready response has exactly this shape: {\"status\":\"ready\",\"actions\":[ACTION,...]}.",
+    "A clarification response has exactly this shape: {\"status\":\"needs_clarification\",\"questions\":[\"QUESTION\",...]}.",
+    "All action keys shown in the example are required. Use null for unavailable nullable values. Do not add keys.",
     `Current instant: ${now.toISOString()}. User timezone: ${timezone}.`,
-    `EXAMPLE JSON OUTPUT: ${JSON.stringify(example)}`,
+    `EXAMPLE ACTION: ${JSON.stringify(example)}`,
   ].join("\n");
 
   let lastError: unknown;
@@ -47,11 +52,11 @@ export async function parseWithDeepSeek(text: string, timezone: string, now: Dat
           { role: "user", content: text },
         ],
         response_format: { type: "json_object" },
-        max_tokens: 1600,
+        max_tokens: 4000,
       });
       const content = response.choices[0]?.message.content;
       if (!content) throw new Error("DeepSeek 返回了空内容");
-      return lifeActionSchema.parse(JSON.parse(content));
+      return parsePlanSchema.parse(JSON.parse(content));
     } catch (error) {
       lastError = error;
     }

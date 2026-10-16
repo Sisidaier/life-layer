@@ -19,8 +19,8 @@ The Mac is needed for development and deployment only. It does not need to stay 
 1. Open the production HTTPS URL in Safari.
 2. Tap Share.
 3. Tap “Add to Home Screen”.
-4. Keep the name “Life Layer” and tap Add.
-5. Launch Life Layer from the new home-screen icon.
+4. Keep the name “小橘历” and tap Add.
+5. Launch 小橘历 from the new home-screen icon.
 
 The current local URL (`127.0.0.1`) cannot be installed or reached from the phone. Complete the hosted deployment first.
 
