@@ -68,15 +68,14 @@ DEEPSEEK_MODEL=deepseek-chat
 - 使用 DeepSeek 时，用户发来的指令会发送给该 API 用于解析
 - 页面不会在未经确认时执行日历写入
 
-## iPhone 与 Apple 快捷指令
+## iPhone 使用
 
-在 Mac 本地启动网页，不能让 iPhone 在 Mac 关机或离开同一网络后继续访问。若要从 iPhone 主屏幕操作，需要一台 iPhone 可访问的 HTTPS 后端，以及按 [Apple 快捷指令桥接指南](docs/SHORTCUTS_BRIDGE.md)配置快捷指令。更多说明见 [iPhone PWA 指南](docs/IPHONE_PWA.md)。
+可以在 iPhone Safari 中打开网页并添加到主屏幕。普通网页/PWA 无法直接取得 EventKit 权限；当前日历写入桥面向 macOS 本机运行。手机原生日历接入暂未实现。详见 [iPhone PWA 指南](docs/IPHONE_PWA.md)。
 
 ## 项目文档
 
 - [架构和项目范围](docs/ARCHITECTURE.md)
 - [结构化操作数据格式](docs/ACTION_SCHEMA.md)
-- [Apple 快捷指令桥接](docs/SHORTCUTS_BRIDGE.md)
 - [iPhone PWA 使用路径](docs/IPHONE_PWA.md)
 
 ## 开源许可

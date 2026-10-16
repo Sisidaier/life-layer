@@ -121,7 +121,7 @@ function historyMessages(entries: HistoryEntry[]): Message[] {
       restored.push({
         id: `${entry.id}:assistant`,
         role: "assistant",
-        text: result?.message ?? (entry.status === "running" ? "正在等待 iPhone Shortcut 返回结果。" : "执行失败。"),
+        text: result?.message ?? (entry.status === "running" ? "操作仍在处理中。" : "执行失败。"),
         pending: entry,
         state: entry.status,
       });
@@ -230,20 +230,6 @@ export default function Home() {
           if (!response.ok) throw new Error("读取历史失败");
           entries = data.history ?? [];
           if (entries.length > 0) writeLocalHistory(entries);
-        }
-
-        const params = new URLSearchParams(window.location.search);
-        const resultId = params.get("shortcutResult");
-        if (resultId) {
-          const status = params.get("status") === "succeeded" ? "succeeded" : "failed";
-          const message = params.get("message") || (status === "succeeded" ? "iPhone Shortcut 执行成功。" : "iPhone Shortcut 执行失败。");
-          entries = entries.map((entry) =>
-            entry.id === resultId
-              ? { ...entry, status, result: { ok: status === "succeeded", message }, updatedAt: new Date().toISOString() }
-              : entry,
-          );
-          writeLocalHistory(entries);
-          window.history.replaceState({}, "", window.location.pathname);
         }
 
         if (!active || entries.length === 0) return;
@@ -387,22 +373,6 @@ export default function Home() {
       return;
     }
 
-    if (process.env.NEXT_PUBLIC_LIFE_LAYER_EXECUTION_MODE === "shortcut") {
-      const running: HistoryEntry = { ...pending, status: "running", updatedAt: new Date().toISOString() };
-      upsertLocalHistory(running);
-      const callbackBase = `${window.location.origin}/?shortcutResult=${encodeURIComponent(pending.id)}`;
-      const payload = {
-        requestId: pending.id,
-        action: pending.action,
-        targetName: pending.targetName ?? null,
-        callbackSuccess: `${callbackBase}&status=succeeded&message=${encodeURIComponent("已写入 Apple 系统")}`,
-        callbackFailure: `${callbackBase}&status=failed&message=${encodeURIComponent("Shortcut 执行失败")}`,
-      };
-      const shortcutName = process.env.NEXT_PUBLIC_LIFE_LAYER_SHORTCUT_NAME ?? "Life Layer Bridge";
-      window.location.href = `shortcuts://run-shortcut?name=${encodeURIComponent(shortcutName)}&input=text&text=${encodeURIComponent(JSON.stringify(payload))}`;
-      return;
-    }
-
     try {
       const response = await fetch(`/api/actions/${pending.id}/confirm`, {
         method: "POST",
@@ -445,11 +415,13 @@ export default function Home() {
         <div className="brand-lockup">
           <span className="brand-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
-              <rect x="4" y="5.5" width="16" height="15" rx="4" />
-              <path d="M8 4v3.5M16 4v3.5M4.5 10h15" />
-              <circle cx="9" cy="14" r="1.25" />
-              <circle cx="14.5" cy="14" r="1.25" />
-              <circle cx="9" cy="17.5" r="1.25" />
+              <path d="M10.8 5.4c-.7-2.8 1.4-4.5 3.9-4.2 1.9.3 3 1.7 2.7 3.2 2-1.4 4-.9 4.8.4-2.6-.1-4.2.8-5.4 2.6z" fill="#6d984b" />
+              <path d="M11.8 4.2c-.3-1.3.3-2.4 1.3-3.1" stroke="#527d38" strokeWidth=".8" strokeLinecap="round" />
+              <circle cx="11.8" cy="14" r="8.8" fill="#f59a3d" />
+              <circle cx="11.8" cy="14" r="7.1" fill="#fffaf0" />
+              <path d="M11.8 8.9V14l4 2.5" stroke="#eb7832" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="11.8" cy="14" r="1.1" fill="#eb7832" />
+              <path d="M5.6 11.4a7 7 0 0 1 3.5-3.2" stroke="#fff" strokeOpacity=".65" strokeWidth=".9" strokeLinecap="round" />
             </svg>
           </span>
           <div>

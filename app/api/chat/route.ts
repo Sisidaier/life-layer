@@ -105,8 +105,7 @@ export async function POST(request: Request) {
 
     if (
       action.operation === "query" &&
-      !action.needsConfirmation &&
-      process.env.LIFE_LAYER_EXECUTION_MODE !== "shortcut"
+      !action.needsConfirmation
     ) {
       const result = await getBridge().execute(action, pending.id, targetName ?? undefined);
       return NextResponse.json({

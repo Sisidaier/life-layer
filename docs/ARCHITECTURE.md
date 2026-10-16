@@ -15,7 +15,7 @@ Browser chat UI
   -> confirmation card
   -> POST /api/actions/:id/confirm
   -> LifeBridge
-  -> MockBridge | MacShortcutsBridge
+  -> MockBridge | MacOsAutomationBridge
   -> Apple Calendar / Reminders
 ```
 
@@ -31,13 +31,12 @@ Mutations require confirmation. Queries are read-only and execute immediately. T
 - A deterministic parser for the Golden Path, so local validation has no API dependency
 - JSON-file persistence under `.data/` for one local user
 - macOS Calendar/Reminders automation as the zero-setup local bridge
-- macOS Shortcuts CLI as an alternative bridge
 
 JSON persistence is intentional for the local single-user MVP. Replace `ActionRepository` with SQLite before multi-user or hosted use.
 
 ## Bridge boundary
 
-Application code depends only on `LifeBridge.execute(action)`. The macOS automation adapter writes through the installed Calendar and Reminders apps and relies on their normal permission prompts. The Shortcuts adapter serializes the action to a temporary JSON file and runs `shortcuts run`. A future EventKit adapter can implement the same interface without changing the parser, confirmation flow, or UI.
+Application code depends only on `LifeBridge.execute(action)`. The macOS automation adapter writes through the installed Calendar and Reminders apps and relies on their normal permission prompts. A future iOS EventKit adapter can provide native iPhone calendar access without changing the parser or confirmation flow.
 
 ## Security and correctness rules
 

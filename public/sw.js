@@ -1,4 +1,4 @@
-const CACHE_NAME = "life-layer-shell-v9";
+const CACHE_NAME = "life-layer-shell-v11";
 const SHELL_URLS = ["/", "/manifest.webmanifest", "/icon-192", "/icon-512"];
 
 self.addEventListener("install", (event) => {

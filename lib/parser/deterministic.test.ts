@@ -16,7 +16,7 @@ describe("Golden Path parser", () => {
   });
 
   it("falls back to Asia/Shanghai when deployment timezone is invalid", () => {
-    expect(normalizeTimezone("shortcut")).toBe("Asia/Shanghai");
+    expect(normalizeTimezone("invalid timezone")).toBe("Asia/Shanghai");
     expect(normalizeTimezone(undefined)).toBe("Asia/Shanghai");
   });
 });

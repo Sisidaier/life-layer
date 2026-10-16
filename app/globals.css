@@ -20,7 +20,7 @@
 }
 
 * { box-sizing: border-box; }
-html { min-height: 100%; background: var(--canvas); }
+html { min-height: 100%; background: var(--canvas); -webkit-text-size-adjust: 100%; }
 body {
   min-height: 100%;
   margin: 0;
@@ -65,8 +65,7 @@ button:focus-visible, textarea:focus-visible { outline: 3px solid color-mix(in s
   background: linear-gradient(145deg, #f7a36f, var(--accent));
   box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 24%, transparent);
 }
-.brand-icon svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.brand-icon circle { fill: currentColor; stroke: none; }
+.brand-icon svg { width: 22px; height: 22px; }
 .topbar h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.025em; }
 .topbar p { margin: 2px 0 0; color: var(--muted); font-size: 10px; letter-spacing: .015em; }
 .connection { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--surface-soft); font-size: 11px; opacity: 1; }
@@ -226,9 +225,10 @@ button:focus-visible, textarea:focus-visible { outline: 3px solid color-mix(in s
 }
 
 @media (max-width: 640px) {
+  .composer textarea { font-size: 16px; }
   .topbar { min-height: calc(58px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 17px 0; }
   .brand-icon { width: 32px; height: 32px; border-radius: 11px; }
-  .brand-icon svg { width: 19px; height: 19px; }
+  .brand-icon svg { width: 21px; height: 21px; }
   .connection { gap: 6px; padding: 6px 9px; font-size: 10px; }
   .conversation { padding: 34px 16px 155px; }
   .message { margin-bottom: 27px; }

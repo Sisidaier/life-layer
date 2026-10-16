@@ -10,7 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     orientation: "portrait",
     background_color: "#ffffff",
-    theme_color: "#ffffff",
+    theme_color: "#e46f2e",
     lang: "zh-CN",
     categories: ["productivity", "utilities"],
     icons: [
